@@ -1,0 +1,1860 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agriturismo I Costanti — B&amp;B in dimora ottocentesca a Caldiero, Verona</title>
+<meta name="description" content="Nove camere in un'antica corte rurale veneta nel cuore del DOC Arcole, a 15 km da Verona. Piscina, terrazza-solarium, vino e olio extravergine di produzione propria." />
+<meta name="theme-color" content="#100D0B" />
+<link rel="icon" href="public/logo/i-costanti.svg" />
+
+<!-- Poster e primi fotogrammi, separati per orientamento: meta' dei byte
+     servirebbe al taglio che quel dispositivo non usera' mai. -->
+<link rel="preload" as="image" href="public/hero/poster.jpg" fetchpriority="high"
+      media="(min-aspect-ratio: 21/20)" />
+<link rel="preload" as="image" href="public/hero/land/f_004.jpg"
+      media="(min-aspect-ratio: 21/20)" />
+<link rel="preload" as="image" href="public/hero/port/f_000.jpg" fetchpriority="high"
+      media="(max-aspect-ratio: 21/20)" />
+<link rel="preload" as="image" href="public/hero/port/f_004.jpg"
+      media="(max-aspect-ratio: 21/20)" />
+
+<style>
+/* =========================================================================
+   I COSTANTI — Caldiero (VR)
+   Pagina unica, autosufficiente. Gli unici file esterni sono le immagini:
+   public/hero/  (sequenza dell'hero)  public/foto/  (segnaposto)  public/logo/
+   ========================================================================= */
+
+:root {
+  /* --- Colori ---------------------------------------------------------- */
+  /* Campionati dall'ultimo frame del video, non scelti a occhio:
+     centro del varco #0D0B0A, fondo #110F0A. --buio sta in mezzo, cosi' il
+     confine fra canvas e pagina non produce nessun bordo visibile. */
+  --buio:        #100D0B;
+  --buio-caldo:  #1A1411;
+  --crema:       #F2EBE0;
+  --crema-scuro: #E7DCCB;
+  --pietra:      #C9B9A3;
+  --oro:         #E8B87A;
+  --bruno:       #4A2C1A;   /* il bruno del marchio */
+  --inchiostro:  #2A2119;
+
+  --oro-forte:   rgb(232 184 122 / 0.15);
+  --oro-tenue:   rgb(232 184 122 / 0.07);
+
+  /* --- L'origine della luce -------------------------------------------- */
+  /* La posizione del bagliore in fondo al corridoio nell'ultimo frame:
+     varco al 49.52% della larghezza, bagliore al 36.33% dell'altezza,
+     misurati sul sorgente. Il JS la ricalcola a ogni resize sulla geometria
+     reale del crop `cover`, cosi' resta agganciata al pixel su ogni
+     breakpoint. Da qui discendono il centro della maschera che si apre e
+     l'origine dello scale-up. La luce del video diventa la luce del sito. */
+  --luce-x: 49.4%;
+  --luce-y: 36.3%;
+
+  /* --- Tipografia ------------------------------------------------------ */
+  --serif:  ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino,
+            "Book Antiqua", Georgia, serif;
+  --sans:   ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Lo script del marchio. Snell Roundhand e' di sistema su macOS; altrove
+     degrada a un corsivo generico. Per la produzione serve un webfont
+     servito in locale (Pinyon Script o Italiana sono i piu' vicini). */
+  --script: "Snell Roundhand", "Apple Chancery", cursive;
+
+  --hero-scroll: 320vh;
+  --testata-h: 78px;
+
+  /* Angoli delle immagini: abbastanza da leggersi come card, non tanto da
+     diventare un bottone. Sull'hero non si applica, e' a tutto schermo. */
+  --raggio: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { background: var(--buio); scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--crema);
+  color: var(--inchiostro);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.salta {
+  position: fixed; top: 0; left: 0; z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--crema); color: var(--buio);
+  font: 500 0.9rem/1 var(--sans);
+  transform: translateY(-120%);
+  transition: transform 0.2s ease;
+}
+.salta:focus { transform: translateY(0); }
+
+/* =========================================================================
+   TESTATA
+   ========================================================================= */
+
+.testata {
+  position: fixed; inset: 0 0 auto 0; z-index: 60;
+  height: var(--testata-h);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 clamp(1rem, 3vw, 2.5rem);
+  /* Fondo sempre presente. Sul video trasparente non regge: l'hero passa da
+     un cielo chiarissimo a un varco quasi nero, quindi nessun colore di testo
+     resta leggibile per tutti i 15 secondi. Col crema fisso il marchio sta
+     anche nei suoi colori originali, senza filtro di inversione. */
+  background: rgb(242 235 224 / 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--inchiostro);
+  box-shadow: 0 1px 0 rgb(74 44 26 / 0.1);
+  transition: box-shadow 0.5s ease, background-color 0.5s ease;
+}
+
+/* Una volta usciti dall'hero la barra si stacca un po' di piu' dal contenuto. */
+.testata.is-chiara {
+  background: rgb(242 235 224 / 0.97);
+  box-shadow: 0 1px 0 rgb(74 44 26 / 0.12), 0 8px 28px rgb(74 44 26 / 0.07);
+}
+
+.marchio {
+  display: flex; align-items: center; gap: 0.7rem;
+  text-decoration: none;
+  justify-self: start;
+}
+.marchio img { width: auto; height: 44px; }
+
+.marchio__nome {
+  color: var(--bruno);
+  font-family: var(--script);
+  font-size: 1.9rem;
+  line-height: 1;
+  padding-bottom: 0.18em;   /* lo script ha discendenti lunghe */
+  white-space: nowrap;
+}
+
+.menu {
+  display: flex; align-items: center;
+  gap: clamp(1rem, 2.4vw, 2.2rem);
+  list-style: none; margin: 0; padding: 0;
+}
+.menu a {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  padding: 0.4rem 0;
+  position: relative;
+  white-space: nowrap;
+}
+.menu a::after {
+  content: ""; position: absolute; inset: auto 0 0 0;
+  height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.22,0.61,0.36,1);
+}
+.menu a:hover::after, .menu a:focus-visible::after { transform: scaleX(1); }
+
+.azioni { justify-self: end; display: flex; align-items: center; gap: 0.75rem; }
+
+.cta {
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.75em 1.5em;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+.cta { color: var(--bruno); border-color: rgb(74 44 26 / 0.45); }
+.cta:hover, .cta:focus-visible {
+  background: var(--bruno); color: var(--crema); border-color: var(--bruno);
+}
+
+.apri-menu {
+  display: none;
+  width: 44px; height: 44px;
+  background: none; border: 0; color: inherit; cursor: pointer;
+  padding: 0;
+}
+.apri-menu i {
+  display: block; width: 22px; height: 1px; margin: 5px auto;
+  background: currentColor; transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.is-menu-aperto .apri-menu i:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.is-menu-aperto .apri-menu i:nth-child(2) { opacity: 0; }
+.is-menu-aperto .apri-menu i:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+@media (max-width: 62rem) {
+  .testata { grid-template-columns: 1fr auto; }
+  /* Il <nav> deve sparire dal flusso della griglia, altrimenti i tre figli
+     non entrano in due colonne e le azioni finiscono su una seconda riga.
+     Con display:contents l'unico figlio e' .menu, che essendo fixed non
+     occupa nessuna cella. */
+  .testata nav { display: contents; }
+  .apri-menu { display: block; }
+  .marchio img { height: 36px; }
+  .marchio__nome { font-size: 1.5rem; }
+  .menu {
+    /* Assoluto e non fixed: il backdrop-filter sulla testata la rende blocco
+       contenitore dei discendenti fixed, quindi un `fixed` qui si ancorerebbe
+       alla barra alta 78px invece che al viewport, e il pannello finirebbe
+       sopra la testata. Con `top:100%` scende esattamente sotto. */
+    position: absolute; top: 100%; left: 0; right: 0;
+    flex-direction: column; gap: 0;
+    background: rgb(242 235 224 / 0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--inchiostro);
+    box-shadow: 0 12px 28px rgb(74 44 26 / 0.14);
+    padding: 1rem 0 2rem;
+    transform: translateY(-120%);
+    transition: transform 0.45s cubic-bezier(0.22,0.61,0.36,1);
+  }
+  .is-menu-aperto .menu { transform: none; }
+  .menu li { width: 100%; text-align: center; }
+  .menu a { display: block; padding: 1rem; font-size: 1.15rem; }
+  .azioni .cta { display: none; }
+  .menu .cta-mobile { display: block; margin: 1rem auto 0; width: max-content; }
+}
+@media (min-width: 62.01rem) { .menu .cta-mobile { display: none; } }
+
+/* =========================================================================
+   HERO
+   ========================================================================= */
+
+.hero { position: relative; height: var(--hero-scroll); background: var(--buio); }
+
+.hero__pin {
+  position: sticky; top: 0;
+  height: 100vh; height: 100svh;
+  overflow: hidden;
+  background: var(--buio);
+}
+
+.hero__poster, .hero__canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+.hero__poster { object-fit: cover; object-position: var(--luce-x) center; z-index: 0; }
+
+.hero__canvas {
+  z-index: 1;
+  opacity: var(--canvas-op, 1);
+  transform: scale(var(--canvas-scala, 1));
+  /* Lo scale finale e' ancorato al varco, non al centro del viewport: e'
+     quello che fa sembrare di attraversare la soglia invece di zoomare. */
+  transform-origin: var(--luce-x) var(--luce-y);
+  will-change: transform, opacity;
+}
+
+.hero__vignetta {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: radial-gradient(ellipse 120% 90% at var(--luce-x) var(--luce-y),
+    transparent 38%, rgb(16 13 11 / 0.5) 100%);
+}
+
+/* Grana: maschera l'upscaling (il sorgente e' alto 630px, sale oltre i 1080)
+   e gli artefatti JPEG. Senza, l'immagine sembra semplicemente molle. */
+.hero__grana {
+  position: absolute; inset: -50%; z-index: 3; pointer-events: none;
+  opacity: 0.15; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grana 0.7s steps(4) infinite;
+}
+@keyframes grana {
+  0% { transform: translate(0,0); }      25% { transform: translate(-2%,1%); }
+  50% { transform: translate(1%,-2%); }  75% { transform: translate(-1%,-1%); }
+  100% { transform: translate(0,0); }
+}
+
+.hero__testo {
+  position: absolute; inset: 0; z-index: 4;
+  display: grid; place-content: center;
+  text-align: center; padding: 2rem;
+  pointer-events: none;
+  opacity: var(--titolo-op, 1);
+  transform: translate3d(0, var(--titolo-y, 0px), 0);
+}
+
+.hero__titolo {
+  margin: 0;
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(2.75rem, 11vw, 8.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.14em; text-indent: 0.14em;
+  text-transform: uppercase;
+  color: var(--crema);
+  text-shadow: 0 0.08em 0.5em rgb(16 13 11 / 0.45);
+}
+
+.hero__sottotitolo {
+  margin: clamp(1rem, 2.5vw, 1.75rem) 0 0;
+  font-size: clamp(0.72rem, 1.5vw, 0.95rem);
+  letter-spacing: 0.3em; text-indent: 0.3em;
+  text-transform: uppercase;
+  color: rgb(242 235 224 / 0.72);
+}
+@media (max-width: 40rem) {
+  .hero__sottotitolo span { display: block; }
+  .hero__sottotitolo .trattino { display: none; }
+  .hero__sottotitolo span + span { margin-top: 0.5em; }
+}
+
+/* La frase del mezzo: perfettamente al centro del viewport, come il titolo.
+   Non si sovrappongono mai — il titolo e' gia' sparito quando questa entra. */
+.hero__frase {
+  position: absolute; inset: 0; z-index: 4;
+  display: grid; place-items: center;
+  margin: 0; padding: 2rem;
+  pointer-events: none;
+  opacity: var(--frase-op, 0);
+  transform: translate3d(0, calc((1 - var(--frase-op, 0)) * 14px), 0);
+}
+/* La misura sta sullo span, non sul contenitore: il contenitore deve restare
+   grande quanto il viewport, altrimenti "centrato" vuol dire centrato dentro
+   una colonna stretta e la frase si incolonna. */
+.hero__frase span {
+  display: block;
+  max-width: min(92vw, 44rem);
+  text-align: center;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(0.9rem, 1.9vw, 1.45rem);
+  line-height: 2.1;
+  letter-spacing: 0.2em; text-indent: 0.2em;
+  text-transform: uppercase;
+  color: rgb(242 235 224 / 0.92);
+  text-shadow: 0 0.1em 0.6em rgb(16 13 11 / 0.6);
+  text-wrap: balance;
+}
+
+.hero__scorri {
+  position: absolute; inset: auto 0 clamp(1.5rem, 4vh, 3rem); z-index: 5;
+  display: grid; justify-items: center; gap: 0.75rem;
+  pointer-events: none;
+  opacity: var(--scorri-op, 1);
+  transition: opacity 0.5s ease;
+}
+.hero__scorri span {
+  font-size: 0.62rem; letter-spacing: 0.42em; text-indent: 0.42em;
+  text-transform: uppercase; color: rgb(242 235 224 / 0.6);
+}
+.hero__scorri i {
+  display: block; width: 1px; height: 3rem;
+  background: linear-gradient(to bottom, rgb(242 235 224 / 0.55), transparent);
+}
+.hero__scorri i::after {
+  content: ""; display: block; width: 1px; height: 1rem;
+  background: var(--crema); animation: scorri 2.2s ease-in-out infinite;
+}
+@keyframes scorri {
+  0% { transform: translateY(-100%); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translateY(300%); opacity: 0; }
+}
+
+/* --- L'apertura: la soglia che si allarga ------------------------------ */
+/*
+   Non e' una dissolvenza: e' il buio del varco che si espande dal punto
+   esatto della porta e si mangia le ante, finche' non resta che l'interno.
+   Il bagliore in fondo al corridoio e' gia' acceso dentro questo strato:
+   quando le ante scompaiono, la luce e' rimasta.
+
+   I due stop sono sfalsati SOTTO lo zero: a --apertura 0 lo stop opaco sta
+   a -16% e quello trasparente a 0%, quindi lo strato e' completamente
+   invisibile. Tenendo lo stop opaco a 0% invece, il centro restava opaco e
+   il bagliore trapelava per tutta l'hero come un alone marrone.
+*/
+.hero__apertura {
+  position: absolute; inset: 0; z-index: 6;
+  background: var(--buio);
+  pointer-events: none;
+  --sfumatura: 16;
+  -webkit-mask-image: radial-gradient(circle at var(--luce-x) var(--luce-y),
+    #000 calc((var(--apertura, 0) - var(--sfumatura)) * 1%),
+    transparent calc(var(--apertura, 0) * 1%));
+  mask-image: radial-gradient(circle at var(--luce-x) var(--luce-y),
+    #000 calc((var(--apertura, 0) - var(--sfumatura)) * 1%),
+    transparent calc(var(--apertura, 0) * 1%));
+}
+
+/* La luce che resta: stesso ancoraggio in ogni sezione scura del sito.
+   Alta esattamente una schermata e agganciata al bordo alto della sezione,
+   non stirata sulla sua altezza: le percentuali del gradiente devono
+   riferirsi a un riquadro grande quanto il viewport, altrimenti in una
+   sezione lunga il bagliore diventa un arcone verticale. */
+.luce {
+  position: absolute; inset: 0 0 auto 0;
+  height: 100vh; height: 100svh;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 52% 42% at var(--luce-x) var(--luce-y),
+      var(--oro-forte) 0%, transparent 72%),
+    radial-gradient(ellipse 115% 90% at var(--luce-x) var(--luce-y),
+      var(--oro-tenue) 0%, transparent 88%);
+}
+
+/* Il benvenuto dentro il pin. Sta sopra la maschera e compare negli ultimi
+   punti della corsa, quando del video non resta che il buio: e' quello che
+   toglie la schermata vuota fra la porta che si apre e la prima frase. */
+.hero__benvenuto {
+  position: absolute; inset: 0; z-index: 7;
+  display: grid; place-items: center;
+  padding: 2rem;
+  pointer-events: none;
+  opacity: var(--benvenuto-op, 0);
+  transform: translate3d(0, calc((1 - var(--benvenuto-op, 0)) * 16px), 0);
+}
+.hero__benvenuto .soglia__interno { max-width: 46rem; }
+
+/* =========================================================================
+   SOGLIA — la risalita verso la luce
+   ========================================================================= */
+
+.soglia { position: relative; overflow: hidden; }
+
+/* Col testo dentro (mobile e riduzione di movimento) la sezione ha bisogno di
+   respiro, e la schiarita puo' distendersi. */
+.soglia:has(.soglia__interno) {
+  min-height: 165svh;
+  padding: clamp(7rem, 30svh, 15rem) 1.5rem clamp(8rem, 26svh, 16rem);
+  background: linear-gradient(to bottom,
+    var(--buio) 0%, var(--buio) 30%, var(--buio-caldo) 46%,
+    #2B2018 60%, #4A3A2A 74%, #8C7358 87%, #C8B69C 95%, var(--crema) 100%);
+}
+
+/* Quando il benvenuto e' migrato nel pin, qui resta SOLO il raccordo fra il
+   buio della soglia e il crema della prima sezione. Deve stare ben sotto una
+   schermata: a 92svh diventava un'altra pagina vuota da attraversare. A 48svh
+   non si vede mai da sola — sopra c'e' ancora il pin che esce, sotto La dimora
+   che entra — e il passaggio si legge come un dissolvenza, non come una
+   sezione. Il gradiente parte a scaldarsi subito, senza il tratto di nero
+   iniziale che qui sarebbe ridondante. */
+.soglia:not(:has(.soglia__interno)) {
+  min-height: 48svh;
+  padding: 0;
+  background: linear-gradient(to bottom,
+    var(--buio) 0%, var(--buio-caldo) 14%, #2B2018 30%,
+    #4A3A2A 48%, #8C7358 68%, #C8B69C 86%, var(--crema) 100%);
+}
+.soglia__interno {
+  position: relative; z-index: 1;
+  max-width: 46rem; margin: 0 auto; text-align: center;
+}
+.soglia__testo {
+  margin: 0;
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(1.5rem, 4.2vw, 2.9rem);
+  line-height: 1.42;
+  color: rgb(242 235 224 / 0.94);
+  text-wrap: balance;
+}
+.soglia__testo + .soglia__testo {
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  font-style: italic;
+  color: rgb(242 235 224 / 0.72);
+}
+.soglia__filo {
+  width: 1px; height: clamp(4rem, 12vh, 7rem);
+  margin: clamp(3rem, 9vh, 5rem) auto 0;
+  background: linear-gradient(to bottom, rgb(232 184 122 / 0.5), transparent);
+}
+
+/* =========================================================================
+   SEZIONI CHIARE — impianto comune
+   ========================================================================= */
+
+.sezione { position: relative; padding: clamp(5rem, 12vh, 9rem) 0; }
+.sezione--calda { background: var(--crema-scuro); }
+.sezione--scura { background: var(--buio); color: var(--crema); overflow: hidden; }
+
+.contenitore { width: min(100% - 3rem, 76rem); margin-inline: auto; }
+.contenitore--stretto { width: min(100% - 3rem, 52rem); margin-inline: auto; }
+
+.occhiello {
+  margin: 0 0 1rem;
+  font-size: 0.7rem; letter-spacing: 0.4em; text-indent: 0.4em;
+  text-transform: uppercase;
+  color: var(--bruno); opacity: 0.65;
+}
+.sezione--scura .occhiello { color: var(--oro); opacity: 0.8; }
+
+.titolo {
+  margin: 0 0 1.5rem;
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.lead {
+  font-family: var(--serif);
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+  text-wrap: pretty;
+}
+.corpo p { margin: 0 0 1.15rem; max-width: 62ch; }
+.corpo p:last-child { margin-bottom: 0; }
+
+.figura { position: relative; margin: 0; }
+/* Niente height:100% qui: entra in conflitto con aspect-ratio, la riga della
+   griglia resta indeterminata e la didascalia finisce sopra le foto sotto.
+   L'altezza la decide il rapporto d'aspetto. */
+.figura img {
+  width: 100%; height: auto; object-fit: cover;
+  border-radius: var(--raggio);
+  box-shadow: 0 1.5rem 3rem rgb(74 44 26 / 0.14);
+}
+.figura figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--bruno); opacity: 0.6;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+}
+
+/* Marca le immagini che sono ancora segnaposto. Da togliere insieme al file
+   quando arriva la foto vera. */
+.provvisoria {
+  padding: 0.2em 0.55em;
+  font-size: 0.66rem; letter-spacing: 0.1em;
+  color: var(--bruno);
+  background: rgb(232 184 122 / 0.3);
+  border: 1px solid rgb(232 184 122 / 0.55);
+  opacity: 1;
+}
+.sezione--scura .provvisoria {
+  color: var(--oro); background: rgb(232 184 122 / 0.12);
+  border-color: rgb(232 184 122 / 0.35);
+}
+
+/* Gli occhi che si abituano alla penombra: i contenuti emergono dal buio.
+   Nessuna attesa — l'elemento e' gia' li' quando lo sguardo ci arriva. */
+.emergi {
+  opacity: 0; transform: translate3d(0, 22px, 0);
+  transition: opacity 1.1s cubic-bezier(0.22,0.61,0.36,1),
+              transform 1.1s cubic-bezier(0.22,0.61,0.36,1);
+}
+.emergi.is-visibile { opacity: 1; transform: none; }
+.emergi[data-ritardo="1"] { transition-delay: 0.12s; }
+.emergi[data-ritardo="2"] { transition-delay: 0.24s; }
+.emergi[data-ritardo="3"] { transition-delay: 0.36s; }
+
+/* --- La dimora --------------------------------------------------------- */
+/* Senza la foto dei titolari la sezione e' un blocco di testo e due immagini:
+   il testo tiene la sua misura di lettura, le foto vanno a tutta larghezza. */
+.dimora__testo { max-width: 42rem; }
+.dimora__coppia {
+  margin-top: clamp(3rem, 7vh, 5rem);
+  display: grid; gap: clamp(1.5rem, 4vw, 3rem);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 46rem) { .dimora__coppia { grid-template-columns: 1fr 1fr; } }
+.dimora__coppia .figura img { aspect-ratio: 3/2; }
+
+.firma {
+  margin-top: 2rem;
+  font-family: var(--script);
+  font-size: 2rem; line-height: 1.2;
+  color: var(--bruno);
+}
+
+/* --- Le camere --------------------------------------------------------- */
+.camere__blocco {
+  display: grid; gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+@media (min-width: 55rem) { .camere__blocco { grid-template-columns: 1.05fr 0.95fr; } }
+.camere__blocco .figura img { aspect-ratio: 3/2; }
+
+/* Elenco a filari, condiviso fra camere e servizi. */
+.filari {
+  list-style: none; margin: clamp(2.5rem, 6vh, 4rem) 0 0; padding: 0;
+  display: grid; gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  border-top: 1px solid rgb(74 44 26 / 0.18);
+}
+.filari li {
+  padding: 1.4rem 1.5rem 1.4rem 0;
+  border-bottom: 1px solid rgb(74 44 26 / 0.18);
+  display: grid; gap: 0.25rem;
+}
+.filari__nome { font-family: var(--serif); font-size: 1.2rem; }
+.filari__dettaglio { font-size: 0.9rem; opacity: 0.72; }
+
+.nota {
+  margin-top: clamp(2rem, 5vh, 3rem);
+  padding: 1rem 1.25rem;
+  border-left: 2px solid var(--oro);
+  background: rgb(232 184 122 / 0.1);
+  font-size: 0.92rem;
+}
+
+/* --- Servizi ----------------------------------------------------------- */
+.servizi__testa {
+  display: grid; gap: clamp(1.5rem, 4vw, 3rem);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 55rem) { .servizi__testa { grid-template-columns: 1fr 1fr; align-items: end; } }
+
+/* --- Carosello ---------------------------------------------------------- */
+/* Scorrimento nativo con scroll-snap: le frecce e i punti pilotano lo stesso
+   scrollLeft, quindi trascinare col dito e cliccare fanno la stessa cosa. */
+.carosello { margin-top: clamp(2.5rem, 6vh, 4rem); }
+
+.carosello__pista {
+  display: flex;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+}
+.carosello__pista::-webkit-scrollbar { display: none; }
+
+.carosello__voce {
+  flex: 0 0 min(78vw, 820px);
+  scroll-snap-align: center;
+  margin: 0;
+}
+.carosello__voce img { aspect-ratio: 3 / 2; }
+
+.carosello__comandi {
+  display: flex; align-items: center; gap: 1rem;
+  margin-top: clamp(1.25rem, 3vh, 2rem);
+}
+.carosello__freccia {
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 1px solid rgb(74 44 26 / 0.3);
+  background: none; color: var(--bruno); cursor: pointer;
+  display: grid; place-items: center; padding: 0;
+  font-size: 1.1rem; line-height: 1;
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+}
+.carosello__freccia:hover:not(:disabled) { background: var(--bruno); color: var(--crema); }
+.carosello__freccia:disabled { opacity: 0.28; cursor: default; }
+
+.carosello__punti { display: flex; gap: 0.5rem; margin-left: auto; }
+.carosello__punto {
+  width: 7px; height: 7px; border-radius: 50%; padding: 0;
+  border: 0; background: rgb(74 44 26 / 0.25); cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.carosello__punto[aria-current="true"] { background: var(--bruno); transform: scale(1.35); }
+
+@media (prefers-reduced-motion: reduce) {
+  .carosello__pista { scroll-behavior: auto; }
+}
+
+/* --- La terra (scura) -------------------------------------------------- */
+.terra__griglia {
+  position: relative; z-index: 1;
+  display: grid; gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: 1fr; align-items: center;
+}
+@media (min-width: 55rem) { .terra__griglia { grid-template-columns: 0.9fr 1.1fr; } }
+.terra__foto {
+  display: grid; gap: clamp(1rem, 2vw, 1.5rem);
+  grid-template-columns: 1fr 1fr;
+}
+/* La grande e' il vigneto, non la cantina: e' l'immagine che regge la
+   sezione. Cantina e olio le stanno sotto, appaiate. */
+.terra__foto .figura--grande { grid-column: 1 / -1; }
+.terra__foto img { aspect-ratio: 3/2; box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.4); }
+.sezione--scura .figura figcaption { color: var(--oro); opacity: 0.7; }
+
+/* --- Dintorni ---------------------------------------------------------- */
+.dintorni__griglia {
+  display: grid; gap: clamp(1.5rem, 3vw, 2.5rem);
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+}
+.dintorni__voce img { aspect-ratio: 1/1; }
+.dintorni__nome {
+  margin: 0.9rem 0 0.2rem;
+  font-family: var(--serif); font-size: 1.25rem;
+}
+.dintorni__nota { font-size: 0.88rem; opacity: 0.7; }
+
+.dintorni__altro {
+  margin-top: clamp(2.5rem, 5vh, 3.5rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(74 44 26 / 0.18);
+  display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem;
+  font-family: var(--serif);
+}
+.dintorni__altro span::after { content: " ·"; opacity: 0.4; margin-left: 1rem; }
+.dintorni__altro span:last-child::after { content: ""; }
+
+/* --- Contatti ---------------------------------------------------------- */
+.contatti__griglia {
+  display: grid; gap: clamp(2.5rem, 6vw, 4.5rem);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 55rem) { .contatti__griglia { grid-template-columns: 0.85fr 1.15fr; } }
+
+.recapito { margin: 0 0 1.75rem; }
+.recapito dt {
+  font-size: 0.7rem; letter-spacing: 0.32em; text-transform: uppercase;
+  opacity: 0.6; margin-bottom: 0.35rem;
+}
+.recapito dd {
+  margin: 0;
+  font-family: var(--serif); font-size: 1.2rem; line-height: 1.5;
+}
+.recapito dd a { text-decoration: none; border-bottom: 1px solid rgb(74 44 26 / 0.3); }
+.recapito dd a:hover { border-bottom-color: var(--bruno); }
+
+.modulo { display: grid; gap: 1.1rem; }
+.campo { display: grid; gap: 0.4rem; }
+.campo--doppio { display: grid; gap: 1.1rem; grid-template-columns: 1fr 1fr; }
+.campo label {
+  font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.7;
+}
+.campo input, .campo textarea, .campo select {
+  font-family: var(--sans); font-size: 1rem;
+  padding: 0.85em 1em;
+  border: 1px solid rgb(74 44 26 / 0.25);
+  background: rgb(255 255 255 / 0.5);
+  color: var(--inchiostro);
+  border-radius: 0;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+.campo input:focus, .campo textarea:focus, .campo select:focus {
+  outline: none; border-color: var(--bruno); background: #fff;
+}
+.campo textarea { resize: vertical; min-height: 7rem; }
+
+.invia {
+  justify-self: start;
+  font-family: var(--serif); font-size: 0.95rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 1em 2.4em;
+  background: var(--bruno); color: var(--crema);
+  border: 1px solid var(--bruno); cursor: pointer;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+.invia:hover { background: transparent; color: var(--bruno); }
+
+.mappa { margin-top: clamp(3rem, 7vh, 5rem); }
+.mappa__cornice {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--crema-scuro);
+  border: 1px solid rgb(74 44 26 / 0.18);
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+/* L'iframe sostituisce il velo: stessa cornice, nessuno scarto di layout. */
+.mappa__cornice iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+.mappa__velo {
+  display: grid; gap: 1.1rem; justify-items: center;
+  text-align: center; padding: 2rem; max-width: 34rem;
+}
+.mappa__nota { margin: 0; font-size: 0.92rem; line-height: 1.6; opacity: 0.8; }
+.mappa__carica {
+  font-family: var(--serif); font-size: 0.92rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.9em 2.2em; cursor: pointer;
+  background: var(--bruno); color: var(--crema);
+  border: 1px solid var(--bruno);
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+.mappa__carica:hover { background: transparent; color: var(--bruno); }
+.mappa__esterno { font-size: 0.82rem; opacity: 0.65; }
+
+/* --- Piede ------------------------------------------------------------- */
+.piede {
+  background: var(--buio); color: rgb(242 235 224 / 0.75);
+  padding: clamp(3rem, 8vh, 5rem) 0 2rem;
+  font-size: 0.9rem;
+}
+.piede__griglia {
+  display: grid; gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid rgb(242 235 224 / 0.14);
+}
+.piede h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--oro); font-weight: 400;
+}
+.piede a { text-decoration: none; opacity: 0.85; }
+.piede a:hover { opacity: 1; }
+.piede ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.piede__crediti {
+  margin: 1.25rem 0 0;
+  font-size: 0.72rem; line-height: 1.6;
+  opacity: 0.5; max-width: 60ch;
+}
+.piede__crediti a { text-decoration: underline; }
+
+.piede__coda {
+  padding-top: 1.5rem;
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem;
+  justify-content: space-between;
+  font-size: 0.8rem; opacity: 0.6;
+}
+.piede__marchio {
+  font-family: var(--script); font-size: 1.6rem;
+  color: var(--crema); opacity: 0.9; margin: 0 0 0.5rem;
+}
+
+/* --- Lingue (predisposizione EN/DE) ------------------------------------ */
+.lingue { display: flex; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.1em; }
+.lingue a { text-decoration: none; opacity: 0.55; }
+.lingue a[aria-current="true"] { opacity: 1; border-bottom: 1px solid currentColor; }
+
+/* =========================================================================
+   Fallback: mobile e prefers-reduced-motion
+   ========================================================================= */
+
+/* Senza pin l'hero e' alto una schermata: nessuno scroll rubato. */
+.hero[data-modalita="statico"], .hero[data-modalita="riproduzione"] {
+  height: 100vh; height: 100svh;
+}
+.hero[data-modalita="statico"] .hero__pin,
+.hero[data-modalita="riproduzione"] .hero__pin { position: relative; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero__grana { animation: none; }
+  .hero__scorri i::after { animation: none; }
+  .emergi { transition-duration: 0.01ms; }
+  .camera__foto img { transition: none; }
+}
+</style>
+</head>
+
+<body>
+
+<a class="salta" href="#soglia">Salta l'introduzione</a>
+
+<header class="testata" id="testata">
+  <a class="marchio" href="#top" aria-label="I Costanti — torna in cima">
+    <!-- Ricostruzione del marchio. Per usare l'originale: salvarlo come
+         public/logo/i-costanti-emblema.png e cambiare il src qui sotto. -->
+    <img src="public/logo/i-costanti-emblema.svg" alt="" width="38" height="55" />
+    <span class="marchio__nome">I Costanti</span>
+  </a>
+
+  <nav aria-label="Principale">
+    <ul class="menu" id="menu">
+      <li><a href="#dimora">La dimora</a></li>
+      <li><a href="#camere">Le camere</a></li>
+      <li><a href="#servizi">Servizi</a></li>
+      <li><a href="#terra">La terra</a></li>
+      <li><a href="#dintorni">Dintorni</a></li>
+      <li><a href="#contatti">Contatti</a></li>
+      <li><a class="cta cta-mobile" href="#contatti">Riserva una camera</a></li>
+    </ul>
+  </nav>
+
+  <div class="azioni">
+    <a class="cta" href="#contatti">Riserva una camera</a>
+    <button class="apri-menu" id="apri-menu" aria-expanded="false" aria-controls="menu">
+      <span class="sr-only">Apri il menu</span>
+      <i></i><i></i><i></i>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- =====================================================================
+       HERO
+       ===================================================================== -->
+  <section class="hero" id="hero" data-frames="public/hero">
+    <div class="hero__pin">
+      <picture>
+        <!-- Sotto 21/20 vale il taglio verticale: il poster orizzontale li'
+             mostrerebbe il 20% della larghezza. Stessa soglia del JS. -->
+        <source media="(max-aspect-ratio: 21/20)" srcset="public/hero/port/f_000.jpg" />
+        <img class="hero__poster" src="public/hero/poster.jpg" alt="" aria-hidden="true"
+             fetchpriority="high" decoding="async" />
+      </picture>
+      <canvas class="hero__canvas" aria-hidden="true"></canvas>
+
+      <div class="hero__vignetta" aria-hidden="true"></div>
+      <div class="hero__grana" aria-hidden="true"></div>
+
+      <div class="hero__testo">
+        <h1 class="hero__titolo">I Costanti</h1>
+        <p class="hero__sottotitolo">
+          <span>Agriturismo e Bed &amp; Breakfast</span
+          ><span class="trattino" aria-hidden="true"> — </span
+          ><span>Caldiero, Verona</span>
+        </p>
+      </div>
+
+      <p class="hero__frase" aria-hidden="true">
+        <span>Ci sono case che non si visitano, si abitano anche solo per una notte</span>
+      </p>
+
+      <div class="hero__scorri">
+        <span>Scorri</span>
+        <i aria-hidden="true"></i>
+      </div>
+
+      <div class="hero__apertura" aria-hidden="true">
+        <div class="luce"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SOGLIA
+       ===================================================================== -->
+  <section class="soglia" id="soglia">
+    <div class="luce" aria-hidden="true"></div>
+    <div class="soglia__interno">
+      <p class="soglia__testo emergi">Qui il tempo rallenta, e la casa ti accoglie.</p>
+      <div class="soglia__filo emergi" data-ritardo="1" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       LA DIMORA
+       ===================================================================== -->
+  <section class="sezione" id="dimora">
+    <div class="contenitore">
+      <div class="corpo dimora__testo emergi">
+          <p class="occhiello">La dimora</p>
+          <h2 class="titolo">Una corte rurale veneta, e la gente che ci abita</h2>
+          <p class="lead">
+            I Costanti è una dimora dell'Ottocento: muri spessi, stanze alte,
+            il respiro lento delle case costruite per durare più di chi le ha
+            costruite.
+          </p>
+          <p>
+            È un'antica corte rurale veneta, di quelle che nella pianura fra
+            Verona e i Lessini hanno organizzato per secoli la vita agricola —
+            la casa, il fienile, la cantina, tutto attorno allo stesso spazio.
+            Non è stata trasformata in un albergo: è rimasta una casa, e le si
+            è fatto posto per gli ospiti.
+          </p>
+          <p>
+            Gli arredi sono quelli antichi di famiglia. Non mobili scelti a
+            catalogo per intonarsi a un'idea di rustico, ma cose che stanno
+            qui da sempre, con i segni di chi le ha usate prima.
+          </p>
+          <p>
+            Ad accogliervi ci sono Francesca Vecchioni, Milo e Matteo Toccaceli.
+          </p>
+          <p class="firma">Francesca, Milo &amp; Matteo</p>
+      </div>
+
+      <!-- Niente foto di persone per ora: la dimora si racconta con la corte
+           e con gli arredi. -->
+      <div class="dimora__coppia">
+        <figure class="figura emergi">
+          <img src="public/foto/dimora/corte.jpg"
+               alt="La corte dell'agriturismo I Costanti"
+               loading="lazy" width="640" height="427" />
+          <figcaption>La corte <span class="provvisoria">bassa risoluzione</span></figcaption>
+        </figure>
+        <figure class="figura emergi" data-ritardo="1">
+          <img src="public/foto/dimora/arredi.jpg"
+               alt="Gli arredi antichi di famiglia"
+               loading="lazy" width="459" height="306" />
+          <figcaption>Gli arredi di famiglia <span class="provvisoria">bassa risoluzione</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       LE CAMERE
+       ===================================================================== -->
+  <section class="sezione sezione--calda" id="camere">
+    <div class="contenitore">
+      <div class="camere__blocco">
+        <div class="corpo emergi">
+          <p class="occhiello">Le camere</p>
+          <h2 class="titolo">Nove camere, e il silenzio che serve per dormire</h2>
+          <p class="lead">
+            Sono nove, ricavate negli spazi della casa senza forzarli.
+          </p>
+          <p>
+            Hanno i soffitti alti e le finestre profonde delle case vecchie, e
+            il tipo di quiete che in campagna non c'è bisogno di costruire.
+            Gli arredi sono quelli antichi di famiglia.
+          </p>
+          <p>
+            Il comfort c'è tutto, ma non si mette in mostra. È quello di una
+            casa tenuta bene: si dorme, ci si sveglia con la luce giusta, e
+            la colazione è già pronta di sotto.
+          </p>
+        </div>
+
+        <figure class="figura emergi" data-ritardo="1">
+          <!-- Foto reale dal sito del cliente: camera Il Ruscello. Solo 458px:
+               da sostituire con l'originale ad alta risoluzione. -->
+          <img src="public/foto/camere/camere.jpg"
+               alt="Una delle camere dell'agriturismo I Costanti"
+               loading="lazy" width="458" height="305" />
+          <figcaption>Le camere <span class="provvisoria">bassa risoluzione</span></figcaption>
+        </figure>
+      </div>
+
+      <ul class="filari emergi">
+        <li>
+          <span class="filari__nome">Nove camere</span>
+          <span class="filari__dettaglio">Ognuna con il suo nome</span>
+        </li>
+        <li>
+          <span class="filari__nome">Arredi antichi di famiglia</span>
+          <span class="filari__dettaglio">Nessun allestimento in serie</span>
+        </li>
+        <li>
+          <span class="filari__nome">Camera accessibile</span>
+          <span class="filari__dettaglio">Una camera attrezzata per disabili</span>
+        </li>
+        <li>
+          <span class="filari__nome">Animali ammessi</span>
+          <span class="filari__dettaglio">Di piccola taglia</span>
+        </li>
+      </ul>
+
+      <p class="nota">
+        <strong>Da confermare col cliente:</strong> le dotazioni delle camere
+        (bagno privato, aria condizionata, TV, cassaforte), le tipologie
+        (matrimoniale, doppia, tripla), le metrature e i prezzi. Qui sopra sono
+        elencate solo le cose che sappiamo per certe: nulla è stato dato per
+        scontato.
+      </p>
+
+      <!-- I nomi delle nove camere, tolti dalla pagina ma non persi:
+           Il Ruscello · Tenera Sissi · Il Gelso Bianco · Jasmine ·
+           Il Ponticello di Flora · Oro di Venezia · Giulietta ·
+           Il Rifugio del Poeta · (la nona è ancora da confermare).
+           Se in futuro si vuole tornare a una scheda per camera, ripartire da qui. -->
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SERVIZI
+       ===================================================================== -->
+  <section class="sezione" id="servizi">
+    <div class="contenitore">
+      <div class="servizi__testa">
+        <div class="emergi">
+          <p class="occhiello">Servizi</p>
+          <h2 class="titolo">Niente da fare, e tutto il tempo per farlo</h2>
+        </div>
+        <p class="lead emergi" data-ritardo="1">
+          Una piscina per i pomeriggi lunghi. Il fienile diventato terrazza,
+          per il sole del mattino. Le stufe accese quando cala la sera. E sei
+          biciclette appoggiate al muro, per chi la campagna vuole vederla al
+          passo giusto.
+        </p>
+      </div>
+
+      <!-- Camera accessibile e animali stanno nella sezione Camere: qui
+           restano i servizi della struttura, senza ripetizioni. -->
+      <ul class="filari emergi">
+        <li>
+          <span class="filari__nome">Piscina</span>
+          <span class="filari__dettaglio">Con lettini e ombrelloni</span>
+        </li>
+        <li>
+          <span class="filari__nome">Terrazza-solarium</span>
+          <span class="filari__dettaglio">Ricavata dall'antico fienile</span>
+        </li>
+        <li>
+          <span class="filari__nome">Sala lettura</span>
+          <span class="filari__dettaglio">Con stufe a legna</span>
+        </li>
+        <li>
+          <span class="filari__nome">Colazione a buffet</span>
+          <span class="filari__dettaglio">Servita ogni mattina</span>
+        </li>
+        <li>
+          <span class="filari__nome">Sei biciclette</span>
+          <span class="filari__dettaglio">A disposizione degli ospiti</span>
+        </li>
+        <li>
+          <span class="filari__nome">Wi-fi gratuito</span>
+          <span class="filari__dettaglio">In tutta la struttura</span>
+        </li>
+      </ul>
+
+      <div class="carosello emergi" data-carosello>
+        <div class="carosello__pista" tabindex="0" role="region"
+             aria-label="Fotografie dei servizi, scorrevoli">
+          <figure class="figura carosello__voce">
+            <img src="public/foto/servizi/piscina.jpg" alt="La piscina"
+                 loading="lazy" width="1024" height="683" />
+            <figcaption>La piscina <span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <figure class="figura carosello__voce">
+            <img src="public/foto/servizi/solarium.jpg" alt="La terrazza-solarium sul fienile"
+                 loading="lazy" width="1024" height="683" />
+            <figcaption>Il solarium sul fienile <span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <figure class="figura carosello__voce">
+            <img src="public/foto/servizi/sala-lettura.jpg" alt="La sala lettura con le stufe a legna"
+                 loading="lazy" width="960" height="640" />
+            <figcaption>La sala lettura <span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <figure class="figura carosello__voce">
+            <img src="public/foto/servizi/biciclette.jpg" alt="Le biciclette per gli ospiti"
+                 loading="lazy" width="1024" height="683" />
+            <figcaption>Le biciclette <span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+        </div>
+
+        <div class="carosello__comandi">
+          <button class="carosello__freccia" type="button" data-dir="-1"
+                  aria-label="Immagine precedente">&#8592;</button>
+          <button class="carosello__freccia" type="button" data-dir="1"
+                  aria-label="Immagine successiva">&#8594;</button>
+          <div class="carosello__punti"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       LA TERRA
+       ===================================================================== -->
+  <section class="sezione sezione--scura" id="terra">
+    <div class="luce" aria-hidden="true"></div>
+    <div class="contenitore">
+      <div class="terra__griglia">
+        <div class="corpo emergi">
+          <p class="occhiello">La terra</p>
+          <h2 class="titolo">Un'azienda agricola, prima di tutto il resto</h2>
+          <p class="lead">
+            Qui si fa vino e si fa olio extravergine d'oliva. Non come
+            richiamo per gli ospiti: perché è il lavoro della casa.
+          </p>
+          <p>
+            Siamo nel cuore del <strong>DOC Arcole</strong>, e a due passi
+            dalle Strade del Vino Soave e Valpolicella — quelle del Recioto e
+            dell'Amarone. È una zona che non ha bisogno di essere spiegata a
+            chi beve, e che vale il viaggio a chi vuole cominciare.
+          </p>
+          <p>
+            Sotto la casa c'è una piccola cantina storica. È lì che si fanno
+            le degustazioni: pochi posti, il fresco dei muri, le bottiglie
+            che vengono da fuori dalla finestra.
+          </p>
+        </div>
+
+        <div class="terra__foto">
+          <figure class="figura figura--grande emergi" data-ritardo="1">
+            <img src="public/foto/terra/vigneto.jpg" alt="Il vigneto"
+                 loading="lazy" width="1024" height="683" />
+            <figcaption>Il vigneto <span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <figure class="figura emergi" data-ritardo="2">
+            <img src="public/foto/terra/cantina.jpg" alt="La cantina storica"
+                 loading="lazy" width="1200" height="800" />
+            <figcaption>La cantina storica <span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <figure class="figura emergi" data-ritardo="3">
+            <img src="public/foto/terra/olio.jpg" alt="L'olio extravergine d'oliva"
+                 loading="lazy" width="1024" height="683" />
+            <figcaption>L'olio extravergine <span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       DINTORNI
+       ===================================================================== -->
+  <section class="sezione sezione--calda" id="dintorni">
+    <div class="contenitore">
+      <div class="emergi">
+        <p class="occhiello">Dintorni</p>
+        <h2 class="titolo">Verona è a quindici chilometri</h2>
+        <p class="lead" style="max-width: 46rem;">
+          Abbastanza vicino da andarci a cena, abbastanza lontano da non
+          sentirla. E intorno, mezzo Veneto a portata di giornata.
+        </p>
+      </div>
+
+      <div class="dintorni__griglia">
+        <article class="dintorni__voce emergi">
+          <figure class="figura">
+            <!-- Foto reale dal sito del cliente, ma solo 228px di lato. -->
+            <img src="public/foto/dintorni/verona.jpg" alt="Verona e l'Arena"
+                 loading="lazy" width="228" height="228" />
+            <figcaption><span class="provvisoria">bassa risoluzione</span></figcaption>
+          </figure>
+          <h3 class="dintorni__nome">Verona e l'Arena</h3>
+          <p class="dintorni__nota">A 15 km. Il centro storico, l'Arena, Veronafiere.</p>
+        </article>
+
+        <article class="dintorni__voce emergi" data-ritardo="1">
+          <figure class="figura">
+            <img src="public/foto/dintorni/garda.jpg" alt="Il lago di Garda"
+                 loading="lazy" width="1000" height="1000" />
+            <figcaption><span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <h3 class="dintorni__nome">Lago di Garda</h3>
+          <p class="dintorni__nota">Le rive veronesi, in un'ora scarsa di macchina.</p>
+        </article>
+
+        <article class="dintorni__voce emergi" data-ritardo="2">
+          <figure class="figura">
+            <img src="public/foto/dintorni/sigurta.jpg" alt="Parco Giardino Sigurtà"
+                 loading="lazy" width="1000" height="1000" />
+            <figcaption><span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <h3 class="dintorni__nome">Parco Giardino Sigurtà</h3>
+          <p class="dintorni__nota">Uno dei giardini più belli d'Europa, a Valeggio.</p>
+        </article>
+
+        <article class="dintorni__voce emergi" data-ritardo="3">
+          <figure class="figura">
+            <img src="public/foto/dintorni/soave.jpg" alt="Soave e il suo castello"
+                 loading="lazy" width="1000" height="1000" />
+            <figcaption><span class="provvisoria">foto momentanea</span></figcaption>
+          </figure>
+          <h3 class="dintorni__nome">Soave</h3>
+          <p class="dintorni__nota">Il borgo murato, il castello, il vino che porta il suo nome.</p>
+        </article>
+      </div>
+
+      <div class="dintorni__altro emergi">
+        <span>Le ville venete</span>
+        <span>Vicenza</span>
+        <span>Padova</span>
+        <span>Venezia</span>
+        <span>Le Strade del Vino Soave e Valpolicella</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       CONTATTI
+       ===================================================================== -->
+  <section class="sezione" id="contatti">
+    <div class="contenitore">
+      <div class="contatti__griglia">
+        <div class="emergi">
+          <p class="occhiello">Contatti</p>
+          <h2 class="titolo">Riserva una camera</h2>
+          <p class="lead">
+            Il modo più veloce è il telefono: rispondiamo noi.
+          </p>
+
+          <dl class="recapito">
+            <dt>Telefono</dt>
+            <dd>
+              <a href="tel:+390456151165">+39 045 6151165</a><br />
+              <a href="tel:+393389767854">+39 338 976 7854</a>
+            </dd>
+          </dl>
+
+          <dl class="recapito">
+            <dt>Dove siamo</dt>
+            <dd>
+              Via Giare 1<br />
+              37042 Caldiero (VR)
+            </dd>
+          </dl>
+
+          <dl class="recapito">
+            <dt>Indicazioni</dt>
+            <dd>
+              <a href="https://www.google.com/maps/search/?api=1&amp;query=Via+Giare+1,+37042+Caldiero+VR"
+                 target="_blank" rel="noopener">Apri in Google Maps</a>
+            </dd>
+          </dl>
+        </div>
+
+        <div class="emergi" data-ritardo="1">
+          <!-- ATTENZIONE: il form non è collegato a nulla. Serve un endpoint
+               nell'attributo action (Formspree, Netlify Forms, o uno script
+               lato server) prima di pubblicare, altrimenti le richieste si
+               perdono. Finché non c'è, valgono i numeri di telefono. -->
+          <form class="modulo" method="post" action="#" novalidate>
+            <div class="campo">
+              <label for="nome">Nome e cognome</label>
+              <input type="text" id="nome" name="nome" required autocomplete="name" />
+            </div>
+
+            <div class="campo">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" required autocomplete="email" />
+            </div>
+
+            <div class="campo--doppio">
+              <div class="campo">
+                <label for="arrivo">Arrivo</label>
+                <input type="date" id="arrivo" name="arrivo" />
+              </div>
+              <div class="campo">
+                <label for="partenza">Partenza</label>
+                <input type="date" id="partenza" name="partenza" />
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="ospiti">Ospiti</label>
+              <select id="ospiti" name="ospiti">
+                <option>1</option><option selected>2</option><option>3</option>
+                <option>4</option><option>5 o più</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="messaggio">Messaggio</label>
+              <textarea id="messaggio" name="messaggio"
+                        placeholder="Se avete preferenze su una camera, scrivetecelo."></textarea>
+            </div>
+
+            <button class="invia" type="submit">Invia la richiesta</button>
+          </form>
+        </div>
+      </div>
+
+      <!--
+        Mappa Google con caricamento al clic. L'iframe non parte da solo di
+        proposito: appena si carica, Google riceve l'IP del visitatore e
+        deposita cookie, quindi senza consenso e' un problema GDPR su un sito
+        rivolto all'Italia. Cosi' l'utente decide, e la pagina non paga il peso
+        della mappa se non la apre.
+        Coordinate geocodificate sull'indirizzo: 45.4104157, 11.1693031
+        (OpenStreetMap le attribuisce a «I Costanti, 1, Via Giare, Caldiero»).
+      -->
+      <figure class="figura mappa emergi">
+        <div class="mappa__cornice" id="mappa"
+             data-mappa="https://maps.google.com/maps?q=45.4104157,11.1693031&amp;z=16&amp;hl=it&amp;output=embed">
+          <div class="mappa__velo">
+            <p class="mappa__nota">
+              La mappa è servita da <strong>Google Maps</strong>: aprendola,
+              Google riceve il tuo indirizzo IP e può usare cookie.
+            </p>
+            <button type="button" class="mappa__carica">Mostra la mappa</button>
+            <a class="mappa__esterno"
+               href="https://www.google.com/maps/search/?api=1&amp;query=45.4104157%2C11.1693031"
+               target="_blank" rel="noopener">Oppure aprila in una nuova scheda</a>
+          </div>
+        </div>
+        <figcaption>Via Giare 1 — 37042 Caldiero (VR)</figcaption>
+      </figure>
+    </div>
+  </section>
+
+</main>
+
+<footer class="piede">
+  <div class="contenitore">
+    <div class="piede__griglia">
+      <div>
+        <p class="piede__marchio">I Costanti</p>
+        <p style="margin:0; opacity:0.7;">
+          Agriturismo e Bed &amp; Breakfast<br />
+          Via Giare 1, 37042 Caldiero (VR)
+        </p>
+      </div>
+
+      <div>
+        <h3>Il sito</h3>
+        <ul>
+          <li><a href="#dimora">La dimora</a></li>
+          <li><a href="#camere">Le camere</a></li>
+          <li><a href="#servizi">Servizi</a></li>
+          <li><a href="#terra">La terra</a></li>
+          <li><a href="#dintorni">Dintorni</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3>Contatti</h3>
+        <ul>
+          <li><a href="tel:+390456151165">+39 045 6151165</a></li>
+          <li><a href="tel:+393389767854">+39 338 976 7854</a></li>
+          <li><a href="#contatti">Riserva una camera</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3>Lingue</h3>
+        <!-- Predisposizione EN/DE: le pagine tradotte non esistono ancora. -->
+        <div class="lingue">
+          <a href="#" aria-current="true">IT</a>
+          <a href="#" aria-disabled="true">EN</a>
+          <a href="#" aria-disabled="true">DE</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Obbligo di licenza: la foto della cantina e' CC BY-SA 3.0 e va
+         attribuita finche' resta sul sito. Quando arriva la foto della cantina
+         vera, sostituire il file e cancellare questa riga. -->
+    <p class="piede__crediti">
+      Foto della cantina: «Wine cellar» di Vadim Demin —
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" rel="license noopener"
+         target="_blank">CC BY-SA 3.0</a>. Le altre immagini provvisorie sono di
+      pubblico dominio o CC0.
+    </p>
+
+    <div class="piede__coda">
+      <span>© <span id="anno">2026</span> Agriturismo I Costanti</span>
+      <span>P.IVA da inserire · Privacy e cookie da collegare</span>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+/* =========================================================================
+   Motore dell'hero — sequenza di fotogrammi su canvas, scrubbata dallo scroll.
+
+   Perche' fotogrammi e non un <video>: scrubbare un H.264 costringe il
+   browser a decodificare a ritroso fino al keyframe, e per evitarlo
+   servirebbe un file tutto-intra che a 1280px pesa 16-25 MB. La sequenza a
+   q0.42 pesa 6.5 MB, non ha decodifica a ritroso, e su iOS non dipende da
+   `video.currentTime`, che li' e' inaffidabile.
+   ========================================================================= */
+
+/* --- Soglie temporali ----------------------------------------------------
+   Tutte le fasi dell'hero in frazione di avanzamento (0 = inizio,
+   1 = porta attraversata). Si regola il ritmo qui, senza toccare la logica. */
+const SOGLIE = {
+  TITOLO_TENUTA:   0.10,  // fin qui il titolo resta pieno
+  TITOLO_USCITA:   0.30,  // qui e' sparito: comincia il reveal
+  FRASE_ENTRATA:   0.36,  // "Ci sono case che non si visitano..." entra
+  FRASE_PIENA:     0.47,
+  FRASE_USCITA:    0.58,
+  FRASE_FINE:      0.68,  // da qui nessun testo: resta l'immagine
+  SCALA_INIZIO:    0.86,  // si attraversa la soglia
+  APERTURA_INIZIO: 0.90,  // il varco si allarga e si mangia le ante
+  APERTURA_FINE:   0.955, // qui resta solo il buio: l'immagine ha finito
+  CANVAS_USCITA:   0.94,  // il canvas si spegne sotto la maschera ormai piena
+  BENVENUTO_IN:    0.95,  // e subito compare il testo, dentro il pin
+  FINE:            1.00,
+};
+
+const PARAMETRI = {
+  TITOLO_PARALLASSE_PX: -90,   // negativo = il titolo sale
+  CANVAS_SCALA_MAX:     1.15,
+  APERTURA_MAX:         165,   // % del raggio: oltre 100 copre tutti gli angoli
+  INSEGUIMENTO:         0.16,  // lerp dell'avanzamento
+  DPR_MAX:              1.75,  // il sorgente e' alto 630px: oltre si sprecano pixel
+  CANVAS_PX_MAX:        2560,
+  FPS_RIPRODUZIONE:     24,
+};
+
+/* Dove si trova il varco dentro ciascun taglio. Misurato, non stimato: la
+   fessura fra le ante occupa le colonne 607..849 di 1470 (centro 49.52%), il
+   bagliore sta al 36.33% dell'altezza. Il taglio verticale e' gia' ricentrato
+   in fase di estrazione, quindi li' il varco cade esatto a meta'. */
+const VARCO = {
+  land: { u: 0.4952, v: 0.3633, dir: 'land' },
+  port: { u: 0.5000, v: 0.3633, dir: 'port' },
+};
+
+const TOTALE_FRAME = 120;
+const PASSO_PRIMA_MANO = 4;   // 30 frame ~1.6 MB: l'hero e' gia' scrubbabile
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const norma = (v, a, b) => clamp((v - a) / (b - a));
+const lisci = (t) => t * t * (3 - 2 * t);
+const tra = (a, b, t) => a + (b - a) * t;
+
+function inizializzaHero(radice) {
+  const pin = radice.querySelector('.hero__pin');
+  const canvas = radice.querySelector('.hero__canvas');
+  const poster = radice.querySelector('.hero__poster');
+  const scorri = radice.querySelector('.hero__scorri');
+  const ctx = canvas?.getContext('2d', { alpha: false });
+  if (!pin || !canvas || !ctx) return;
+
+  const base = radice.dataset.frames || 'public/hero';
+  const riduzione = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tocco = !matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const modalita = riduzione ? 'statico' : tocco ? 'riproduzione' : 'scrub';
+  radice.dataset.modalita = modalita;
+
+  /* Solo con l'hero pinnato il blocco di benvenuto viene spostato DENTRO il
+     pin: cosi' compare appena la porta ha finito di aprirsi, invece che una
+     schermata di buio piu' sotto. Senza pin (mobile, riduzione di movimento)
+     resta dov'e', nella soglia, dove lo scroll normale lo porta in vista. */
+  if (modalita === 'scrub') {
+    const blocco = document.querySelector('.soglia__interno');
+    if (blocco) {
+      blocco.classList.remove('emergi');
+      blocco.querySelectorAll('.emergi').forEach((e) => e.classList.remove('emergi'));
+      const strato = document.createElement('div');
+      strato.className = 'hero__benvenuto';
+      strato.appendChild(blocco);
+      pin.appendChild(strato);
+    }
+  }
+
+  let taglio = scegliTaglio();
+  let frame = new Array(TOTALE_FRAME);
+  let ultimoIndice = -1;
+  let geometria = null;
+  let avanzamentoTarget = 0;
+  let avanzamentoReso = 0;
+  let rafId = 0;
+  let scorriNascosto = false;
+
+  function scegliTaglio() {
+    return innerWidth / innerHeight < 1.05 ? VARCO.port : VARCO.land;
+  }
+
+  function carica(i) {
+    return new Promise((ok) => {
+      if (frame[i]) return ok();
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => { frame[i] = img; ok(); };
+      img.onerror = () => ok();
+      img.src = `${base}/${taglio.dir}/f_${String(i).padStart(3, '0')}.jpg`;
+    });
+  }
+
+  /* Prima una mano rada perche' l'hero sia usabile presto, poi il
+     riempimento. Se non arriva nulla la pagina resta scrollabile: non si
+     intrappola mai l'utente in attesa di un asset. */
+  async function caricaTutto() {
+    const rada = [];
+    for (let i = 0; i < TOTALE_FRAME; i += PASSO_PRIMA_MANO) rada.push(i);
+    if (!rada.includes(TOTALE_FRAME - 1)) rada.push(TOTALE_FRAME - 1);
+    await Promise.all(rada.map(carica));
+    avvia();
+    for (let i = 0; i < TOTALE_FRAME; i++) if (!frame[i]) await carica(i);
+  }
+
+  function piuVicino(i) {
+    if (frame[i]) return frame[i];
+    for (let d = 1; d < TOTALE_FRAME; d++) {
+      if (frame[i - d]) return frame[i - d];
+      if (frame[i + d]) return frame[i + d];
+    }
+    return null;
+  }
+
+  function ridimensiona() {
+    const r = pin.getBoundingClientRect();
+    if (!r.width) return;
+    const dpr = Math.min(devicePixelRatio || 1, PARAMETRI.DPR_MAX);
+    const w = Math.min(Math.round(r.width * dpr), PARAMETRI.CANVAS_PX_MAX);
+    const h = Math.round(w * (r.height / r.width));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w; canvas.height = h; ultimoIndice = -1;
+    }
+    const nuovo = scegliTaglio();
+    if (nuovo !== taglio) {
+      taglio = nuovo;
+      frame = new Array(TOTALE_FRAME);
+      ultimoIndice = -1;
+      caricaTutto();
+    }
+  }
+
+  function disegna(i) {
+    const img = piuVicino(i);
+    if (!img) return;
+    const cw = canvas.width, ch = canvas.height;
+    const s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+    const w = img.naturalWidth * s, h = img.naturalHeight * s;
+    const x = (cw - w) / 2, y = (ch - h) / 2;
+    ctx.drawImage(img, x, y, w, h);
+
+    /* La posizione del varco nel viewport dipende dal crop `cover`, che
+       cambia a ogni breakpoint: ricalcolata qui, l'ancora della maschera e
+       dell'origine dello scale resta agganciata al pixel giusto. */
+    const nuova = `${((x + taglio.u * w) / cw * 100).toFixed(2)}%|${((y + taglio.v * h) / ch * 100).toFixed(2)}%`;
+    if (nuova !== geometria) {
+      geometria = nuova;
+      const [lx, ly] = nuova.split('|');
+      /* Sulla radice del documento, non sull'hero: la stessa origine
+         luminosa vale per ogni sezione, altrimenti il bagliore si sposta di
+         qualche pixel nel passaggio e la giunzione si vede. */
+      document.documentElement.style.setProperty('--luce-x', lx);
+      document.documentElement.style.setProperty('--luce-y', ly);
+    }
+    if (poster && poster.style.opacity !== '0') poster.style.opacity = '0';
+  }
+
+  function applica(p) {
+    const s = radice.style;
+    const uscita = norma(p, SOGLIE.TITOLO_TENUTA, SOGLIE.TITOLO_USCITA);
+    s.setProperty('--titolo-op', String(1 - lisci(uscita)));
+    s.setProperty('--titolo-y',
+      `${tra(0, PARAMETRI.TITOLO_PARALLASSE_PX, lisci(norma(p, 0, SOGLIE.TITOLO_USCITA)))}px`);
+
+    const entra = lisci(norma(p, SOGLIE.FRASE_ENTRATA, SOGLIE.FRASE_PIENA));
+    const esce  = lisci(norma(p, SOGLIE.FRASE_USCITA, SOGLIE.FRASE_FINE));
+    s.setProperty('--frase-op', String(entra * (1 - esce)));
+
+    const avvicina = lisci(norma(p, SOGLIE.SCALA_INIZIO, SOGLIE.FINE));
+    s.setProperty('--canvas-scala', String(tra(1, PARAMETRI.CANVAS_SCALA_MAX, avvicina)));
+
+    /* L'apertura finisce prima della fine della corsa: l'ultimo 4.5% serve al
+       testo di benvenuto. Facendola arrivare a p=1 non restava scroll per
+       mostrarlo, e il testo finiva nella sezione sotto — una schermata di buio
+       piu' in la'. */
+    const apre = lisci(norma(p, SOGLIE.APERTURA_INIZIO, SOGLIE.APERTURA_FINE));
+    s.setProperty('--apertura', String(apre * PARAMETRI.APERTURA_MAX));
+
+    s.setProperty('--canvas-op', String(1 - norma(p, SOGLIE.CANVAS_USCITA, SOGLIE.APERTURA_FINE)));
+
+    s.setProperty('--benvenuto-op', String(lisci(norma(p, SOGLIE.BENVENUTO_IN, SOGLIE.FINE))));
+
+    if (!scorriNascosto && p > 0.015) {
+      scorriNascosto = true;
+      s.setProperty('--scorri-op', '0');
+      scorri?.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function avanzamentoDaScroll() {
+    const r = radice.getBoundingClientRect();
+    const corsa = radice.offsetHeight - innerHeight;
+    return corsa > 0 ? clamp(-r.top / corsa) : 0;
+  }
+
+  function ciclo() {
+    rafId = 0;
+    const delta = avanzamentoTarget - avanzamentoReso;
+    avanzamentoReso = Math.abs(delta) < 0.0015
+      ? avanzamentoTarget
+      : avanzamentoReso + delta * PARAMETRI.INSEGUIMENTO;
+
+    const i = Math.round(avanzamentoReso * (TOTALE_FRAME - 1));
+    if (i !== ultimoIndice) { ultimoIndice = i; disegna(i); }
+    applica(avanzamentoReso);
+
+    if (avanzamentoReso !== avanzamentoTarget) rafId = requestAnimationFrame(ciclo);
+  }
+
+  /* Ogni evento di scroll ripianifica il fotogramma invece di affidarsi a un
+     flag "sto animando": se un rAF viene scartato — succede quando la scheda
+     non e' in primo piano — il ciclo non resta incastrato spento. */
+  function sveglia() {
+    avanzamentoTarget = avanzamentoDaScroll();
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(ciclo);
+  }
+
+  function riproduci() {
+    const durata = TOTALE_FRAME / PARAMETRI.FPS_RIPRODUZIONE * 1000;
+    const inizio = performance.now();
+    const passo = (ora) => {
+      const p = clamp((ora - inizio) / durata);
+      const i = Math.round(p * (TOTALE_FRAME - 1));
+      if (i !== ultimoIndice) { ultimoIndice = i; disegna(i); }
+      applica(p * SOGLIE.FRASE_FINE);   // il testo segue, senza rubare lo scroll
+      if (p < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  }
+
+  function avvia() {
+    ridimensiona();
+    if (modalita === 'scrub') {
+      sveglia();
+      addEventListener('scroll', sveglia, { passive: true });
+    } else if (modalita === 'riproduzione') {
+      disegna(0);
+      const oss = new IntersectionObserver((v) => {
+        if (v.some((x) => x.isIntersecting)) { oss.disconnect(); riproduci(); }
+      }, { threshold: 0.35 });
+      oss.observe(radice);
+    } else {
+      disegna(0); applica(0);
+    }
+  }
+
+  addEventListener('resize', () => {
+    ridimensiona();
+    if (modalita === 'scrub') sveglia();
+    else disegna(Math.max(ultimoIndice, 0));
+  }, { passive: true });
+
+  caricaTutto();
+}
+
+/* --- Testata: chiara quando la soglia si e' schiarita --------------------- */
+function inizializzaTestata() {
+  const testata = document.getElementById('testata');
+  const soglia = document.getElementById('soglia');
+  if (!testata || !soglia) return;
+
+  let pendente = false;
+  const valuta = () => {
+    pendente = false;
+    // La soglia passa dal buio al crema: la testata cambia quando il fondo
+    // sotto di lei e' ormai chiaro, non quando finisce l'hero.
+    const punto = soglia.offsetTop + soglia.offsetHeight * 0.62;
+    testata.classList.toggle('is-chiara', scrollY > punto - 80);
+  };
+  addEventListener('scroll', () => {
+    if (!pendente) { pendente = true; requestAnimationFrame(valuta); }
+  }, { passive: true });
+  addEventListener('resize', valuta, { passive: true });
+  valuta();
+}
+
+/* --- Menu mobile --------------------------------------------------------- */
+function inizializzaMenu() {
+  const bottone = document.getElementById('apri-menu');
+  const menu = document.getElementById('menu');
+  if (!bottone || !menu) return;
+
+  const chiudi = () => {
+    document.body.classList.remove('is-menu-aperto');
+    bottone.setAttribute('aria-expanded', 'false');
+  };
+  bottone.addEventListener('click', () => {
+    const aperto = document.body.classList.toggle('is-menu-aperto');
+    bottone.setAttribute('aria-expanded', String(aperto));
+  });
+  menu.addEventListener('click', (e) => { if (e.target.closest('a')) chiudi(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudi(); });
+}
+
+/* --- Emersione dei contenuti --------------------------------------------- */
+function inizializzaEmersione() {
+  const elementi = document.querySelectorAll('.emergi');
+  if (!elementi.length) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    elementi.forEach((e) => e.classList.add('is-visibile'));
+    return;
+  }
+  const oss = new IntersectionObserver((voci) => {
+    for (const v of voci) {
+      if (v.isIntersecting) { v.target.classList.add('is-visibile'); oss.unobserve(v.target); }
+    }
+  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.01 });
+  elementi.forEach((e) => oss.observe(e));
+}
+
+/* --- Caroselli ------------------------------------------------------------
+   Nessuna libreria: lo scorrimento e' quello nativo con scroll-snap, frecce e
+   punti si limitano a spostare scrollLeft. Cosi' trascinare col dito, girare
+   la rotella e cliccare finiscono tutti nello stesso stato. */
+function inizializzaCaroselli() {
+  document.querySelectorAll('[data-carosello]').forEach((car) => {
+    const pista = car.querySelector('.carosello__pista');
+    const voci = pista ? [...pista.children] : [];
+    const punti = car.querySelector('.carosello__punti');
+    const prec = car.querySelector('[data-dir="-1"]');
+    const succ = car.querySelector('[data-dir="1"]');
+    if (!pista || voci.length < 2 || !punti || !prec || !succ) return;
+
+    // Indice della voce piu' vicina al centro della pista.
+    const indice = () => {
+      const centro = pista.scrollLeft + pista.clientWidth / 2;
+      let scelto = 0, minimo = Infinity;
+      voci.forEach((v, i) => {
+        const d = Math.abs(v.offsetLeft + v.clientWidth / 2 - centro);
+        if (d < minimo) { minimo = d; scelto = i; }
+      });
+      return scelto;
+    };
+
+    /* L'indice vive qui e non si deduce da scrollLeft al momento del clic:
+       con lo scorrimento morbido scrollLeft e' ancora fermo appena premuto, e
+       lo stato dei pulsanti arriverebbe solo dal listener ritardato. Chi clicca
+       avanti e subito indietro troverebbe il pulsante ancora disabilitato. */
+    let corrente = 0;
+
+    const dipingi = () => {
+      [...punti.children].forEach((p, k) =>
+        p.setAttribute('aria-current', String(k === corrente)));
+      prec.disabled = corrente === 0;
+      succ.disabled = corrente === voci.length - 1;
+    };
+
+    const vaiA = (i) => {
+      corrente = Math.max(0, Math.min(voci.length - 1, i));
+      const v = voci[corrente];
+      pista.scrollTo({ left: v.offsetLeft - (pista.clientWidth - v.clientWidth) / 2 });
+      dipingi();
+    };
+
+    voci.forEach((_, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'carosello__punto';
+      b.setAttribute('aria-label', `Vai all'immagine ${i + 1} di ${voci.length}`);
+      b.addEventListener('click', () => vaiA(i));
+      punti.appendChild(b);
+    });
+
+    prec.addEventListener('click', () => vaiA(corrente - 1));
+    succ.addEventListener('click', () => vaiA(corrente + 1));
+
+    // Trascinamento col dito o rotella: risincronizza l'indice a snap finito.
+    let attesa;
+    pista.addEventListener('scroll', () => {
+      clearTimeout(attesa);
+      attesa = setTimeout(() => { corrente = indice(); dipingi(); }, 90);
+    }, { passive: true });
+    addEventListener('resize', () => { corrente = indice(); dipingi(); }, { passive: true });
+
+    dipingi();
+  });
+}
+
+/* --- Mappa: si carica solo se l'utente la chiede -------------------------- */
+function inizializzaMappa() {
+  const cornice = document.getElementById('mappa');
+  const bottone = cornice?.querySelector('.mappa__carica');
+  if (!cornice || !bottone) return;
+
+  bottone.addEventListener('click', () => {
+    const iframe = document.createElement('iframe');
+    iframe.src = cornice.dataset.mappa;
+    iframe.title = 'Mappa: Agriturismo I Costanti, Via Giare 1, Caldiero (VR)';
+    iframe.loading = 'lazy';
+    // Niente referrer verso Google: non ha bisogno di sapere da quale pagina
+    // arriva la richiesta per mostrare un punto sulla mappa.
+    iframe.referrerPolicy = 'no-referrer';
+    iframe.allowFullscreen = true;
+    cornice.replaceChildren(iframe);
+  }, { once: true });
+}
+
+/* --- Avvio ---------------------------------------------------------------- */
+const hero = document.querySelector('.hero');
+if (hero) inizializzaHero(hero);
+inizializzaTestata();
+inizializzaMenu();
+inizializzaEmersione();
+inizializzaCaroselli();
+inizializzaMappa();
+document.getElementById('anno').textContent = new Date().getFullYear();
+
+// Le soglie restano raggiungibili dalla console per tarare il ritmo a caldo.
+Object.assign(window, { SOGLIE, PARAMETRI });
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* L'hero e' scritto in CSS puro: e' interamente guidato da custom property
+   che JS riscrive a ogni fotogramma, e le utility non lo esprimono. Tailwind
+   serve dalle sezioni di contenuto in poi. */
+@import "./hero.css";

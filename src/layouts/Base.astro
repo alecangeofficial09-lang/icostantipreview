@@ -1,0 +1,41 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  titolo: string;
+  descrizione: string;
+}
+const { titolo, descrizione } = Astro.props;
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titolo}</title>
+    <meta name="description" content={descrizione} />
+    <meta name="theme-color" content="#100D0B" />
+
+    <!-- Il poster e' l'LCP: va chiesto prima di tutto il resto. I preload sono
+         separati per orientamento, altrimenti meta' dei byte serve al taglio
+         che quel dispositivo non usera' mai. -->
+    <link rel="preload" as="image" href="/hero/poster.jpg" fetchpriority="high"
+          media="(min-aspect-ratio: 21/20)" />
+    <link rel="preload" as="image" href="/hero/land/f_004.jpg"
+          media="(min-aspect-ratio: 21/20)" />
+
+    <link rel="preload" as="image" href="/hero/port/f_000.jpg" fetchpriority="high"
+          media="(max-aspect-ratio: 21/20)" />
+    <link rel="preload" as="image" href="/hero/port/f_004.jpg"
+          media="(max-aspect-ratio: 21/20)" />
+
+    <link rel="canonical" href={Astro.url.href} />
+  </head>
+  <body>
+    <a class="salta-hero" href="#soglia">Salta l'introduzione</a>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

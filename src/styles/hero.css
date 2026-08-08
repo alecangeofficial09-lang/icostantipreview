@@ -1,0 +1,388 @@
+/* =========================================================================
+   I Costanti — hero cinematografico + soglia
+   CSS autonomo, senza Tailwind: e' tutto guidato da custom property scritte
+   da hero.js fotogramma per fotogramma, cosa che le utility non esprimono.
+   Tailwind resta per le sezioni di contenuto.
+   ========================================================================= */
+
+:root {
+  /* --- Colori ---------------------------------------------------------- */
+  /* Campionati dall'ultimo frame del video, non scelti a occhio:
+     centro del varco #0D0B0A, fondo #110F0A. --buio sta in mezzo, cosi'
+     il confine fra canvas e pagina non produce nessun bordo visibile. */
+  --buio:        #100D0B;
+  --buio-caldo:  #1A1411;
+  --crema:       #F2EBE0;
+  --pietra:      #C9B9A3;
+  --oro:         #E8B87A;
+  --inchiostro:  #2A2119;
+
+  /* Il bagliore in fondo al corridoio, reso trasparente per stratificarlo */
+  --oro-forte:   rgb(232 184 122 / 0.15);
+  --oro-tenue:   rgb(232 184 122 / 0.07);
+
+  /* --- L'origine della luce -------------------------------------------- */
+  /* Questa e' la coppia di valori piu' importante del sito. E' la posizione
+     del bagliore in fondo al corridoio nell'ultimo frame del video, misurata
+     sul sorgente: varco al 49.52% della larghezza, bagliore al 36.33%
+     dell'altezza. hero.js la ricalcola a ogni resize sulla geometria reale
+     del crop `cover`, cosi' resta agganciata al pixel su ogni breakpoint.
+     Da qui discendono: il centro della maschera che si apre, l'origine dello
+     scale-up del canvas, e il gradiente caldo di ogni sezione successiva.
+     La luce del video non si spegne mai: diventa la luce del sito. */
+  --luce-x: 49.4%;
+  --luce-y: 36.3%;
+
+  /* --- Tipografia ------------------------------------------------------ */
+  /* Stack di sistema con grazie: su macOS da Iowan Old Style, che regge bene
+     il tono ottocentesco. Da sostituire con un webfont servito in locale
+     (EB Garamond o Cormorant) quando arrivano le scelte definitive. */
+  --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino,
+           "Book Antiqua", Georgia, serif;
+  --sans:  ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* --- Durata dell'hero ------------------------------------------------ */
+  /* Quanto scroll serve per consumare i 15s di girato. 320vh = circa tre
+     schermate: sotto le 250vh il drone corre troppo, sopra le 400vh annoia. */
+  --hero-scroll: 320vh;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Buio sulla radice: l'overscroll in cima e il caricamento restano nel tono
+   dell'hero. Crema sul body: la soglia finisce nella luce e da li' in poi il
+   sito prosegue chiaro, senza che riaffiori il fondo scuro sotto l'ultima
+   sezione. */
+html { background: var(--buio); }
+
+body {
+  margin: 0;
+  background: var(--crema);
+  color: var(--inchiostro);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Utilita' per il solo screen reader */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.salta-hero {
+  position: absolute; top: 0; left: 0; z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--crema); color: var(--buio);
+  font: 500 0.9rem/1 var(--sans);
+  transform: translateY(-120%);
+  transition: transform 0.2s ease;
+}
+.salta-hero:focus { transform: translateY(0); }
+
+/* =========================================================================
+   HERO
+   ========================================================================= */
+
+.hero {
+  position: relative;
+  height: var(--hero-scroll);
+  background: var(--buio);
+}
+
+.hero__pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--buio);
+}
+
+/* Il poster copre il canvas finché i primi frame non sono decodificati:
+   niente schermo nero all'atterraggio. */
+.hero__poster,
+.hero__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hero__poster {
+  object-fit: cover;
+  object-position: var(--luce-x) center;
+  z-index: 0;
+}
+
+.hero__canvas {
+  z-index: 1;
+  opacity: var(--canvas-op, 1);
+  transform: scale(var(--canvas-scala, 1));
+  /* Lo scale-up finale e' ancorato al varco, non al centro del viewport:
+     e' quello che fa sembrare di attraversare la soglia invece di zoomare. */
+  transform-origin: var(--luce-x) var(--luce-y);
+  will-change: transform, opacity;
+}
+
+/* Vignettatura: chiude i bordi e aiuta il testo a staccare */
+.hero__vignetta {
+  position: absolute; inset: 0; z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 120% 90% at var(--luce-x) var(--luce-y),
+      transparent 35%, rgb(16 13 11 / 0.55) 100%);
+}
+
+/* Grana: maschera l'upscaling (il sorgente e' alto 630px, sale a 1080+) e
+   gli artefatti JPEG a q0.42. Senza, l'immagine sembra semplicemente molle. */
+.hero__grana {
+  position: absolute; inset: -50%; z-index: 3;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grana 0.7s steps(4) infinite;
+}
+@keyframes grana {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2%, 1%); }
+  50%  { transform: translate(1%, -2%); }
+  75%  { transform: translate(-1%, -1%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* --- Testo ------------------------------------------------------------- */
+
+.hero__testo {
+  position: absolute; inset: 0; z-index: 4;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 2rem;
+  pointer-events: none;
+  opacity: var(--titolo-op, 1);
+  transform: translate3d(0, var(--titolo-y, 0px), 0);
+}
+
+.hero__titolo {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2.75rem, 11vw, 8.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em; /* compensa lo spazio finale del letter-spacing */
+  text-transform: uppercase;
+  color: var(--crema);
+  text-shadow: 0 0.08em 0.5em rgb(16 13 11 / 0.45);
+}
+
+.hero__sottotitolo {
+  margin: clamp(1rem, 2.5vw, 1.75rem) 0 0;
+  font-size: clamp(0.72rem, 1.5vw, 0.95rem);
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  color: rgb(242 235 224 / 0.72);
+}
+
+/* Sotto una certa larghezza il sottotitolo va a capo da solo e lascia il
+   trattino a inizio riga. Meglio decidere noi dove spezzarlo. */
+@media (max-width: 40rem) {
+  .hero__sottotitolo span { display: block; }
+  .hero__sottotitolo .hero__trattino { display: none; }
+  .hero__sottotitolo span + span { margin-top: 0.5em; }
+}
+
+/* La seconda riga vive nel mezzo del volo, mentre si rivela il casale */
+.hero__frase {
+  position: absolute; inset: auto 0 22%; z-index: 4;
+  margin: 0;
+  text-align: center;
+  padding: 0 2rem;
+  pointer-events: none;
+  font-family: var(--serif);
+  font-size: clamp(1.15rem, 2.6vw, 2rem);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  color: rgb(242 235 224 / 0.9);
+  text-shadow: 0 0.1em 0.6em rgb(16 13 11 / 0.6);
+  opacity: var(--frase-op, 0);
+  transform: translate3d(0, calc((1 - var(--frase-op, 0)) * 14px), 0);
+}
+
+/* --- Indicatore di scroll ---------------------------------------------- */
+
+.hero__scorri {
+  position: absolute; inset: auto 0 clamp(1.5rem, 4vh, 3rem); z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  pointer-events: none;
+  opacity: var(--scorri-op, 1);
+  transition: opacity 0.5s ease;
+}
+.hero__scorri span {
+  font-size: 0.62rem;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: rgb(242 235 224 / 0.6);
+}
+.hero__scorri i {
+  display: block;
+  width: 1px; height: 3rem;
+  background: linear-gradient(to bottom, rgb(242 235 224 / 0.55), transparent);
+}
+.hero__scorri i::after {
+  content: ""; display: block;
+  width: 1px; height: 1rem;
+  background: var(--crema);
+  animation: scorri 2.2s ease-in-out infinite;
+}
+@keyframes scorri {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  40%  { opacity: 1; }
+  100% { transform: translateY(300%); opacity: 0; }
+}
+
+/* --- L'apertura: la soglia che si allarga ------------------------------ */
+/*
+   Non e' una dissolvenza. E' il buio del varco che si espande dal punto
+   esatto in cui si trova la porta e si mangia le ante, finche' non resta
+   che l'interno. Il bagliore in fondo al corridoio e' gia' acceso dentro
+   questo strato: quando le ante scompaiono, la luce e' rimasta.
+*/
+.hero__apertura {
+  position: absolute; inset: 0; z-index: 6;
+  background: var(--buio);
+  pointer-events: none;
+  --sfumatura: 16;
+  -webkit-mask-image: radial-gradient(circle at var(--luce-x) var(--luce-y),
+    #000 calc(var(--apertura, 0) * 1%),
+    transparent calc((var(--apertura, 0) + var(--sfumatura)) * 1%));
+  mask-image: radial-gradient(circle at var(--luce-x) var(--luce-y),
+    #000 calc(var(--apertura, 0) * 1%),
+    transparent calc((var(--apertura, 0) + var(--sfumatura)) * 1%));
+  will-change: mask-image;
+}
+
+/* La luce che resta: stesso ancoraggio in ogni sezione del sito.
+   Alta esattamente una schermata e agganciata al bordo alto della sezione,
+   non stirata sulla sua altezza: le percentuali del gradiente devono riferirsi
+   a un riquadro grande quanto il viewport, altrimenti in una sezione lunga
+   il bagliore diventa un arcone verticale invece della luce in fondo. */
+.luce {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100vh;
+  height: 100svh;
+  pointer-events: none;
+  /* Due strati: un nucleo tenue dove stava la stanza illuminata e un alone
+     largo che tinge l'aria. Stop lunghi, altrimenti si vede il bordo
+     dell'ellisse e sembra una macchia invece che luce. */
+  background:
+    radial-gradient(ellipse 52% 42% at var(--luce-x) var(--luce-y),
+      var(--oro-forte) 0%, transparent 72%),
+    radial-gradient(ellipse 115% 90% at var(--luce-x) var(--luce-y),
+      var(--oro-tenue) 0%, transparent 88%);
+}
+
+/* =========================================================================
+   SOGLIA — il primo blocco oltre la porta
+   ========================================================================= */
+
+.soglia {
+  position: relative;
+  /* Si entra nel buio esatto in cui finisce l'hero e si esce nel crema:
+     la metafora e' entrare in casa e trovare la luce. */
+  background: linear-gradient(
+    to bottom,
+    var(--buio)       0%,
+    var(--buio)      30%,
+    var(--buio-caldo) 46%,
+    #2B2018          60%,
+    #4A3A2A          74%,
+    #8C7358          87%,
+    #C8B69C          95%,
+    var(--crema)    100%
+  );
+  /* Serve altezza vera: la frase deve stare nel buio, e la schiarita ha
+     bisogno di almeno mezza schermata per non sembrare uno stacco. Sotto
+     una schermata e mezza il passaggio si consuma tutto insieme. */
+  min-height: 165svh;
+  padding: clamp(7rem, 30svh, 15rem) 1.5rem clamp(8rem, 26svh, 16rem);
+  overflow: hidden;
+}
+
+.soglia__interno {
+  position: relative;
+  z-index: 1;
+  max-width: 46rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.soglia__testo {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 4.2vw, 2.9rem);
+  line-height: 1.42;
+  letter-spacing: 0.005em;
+  color: rgb(242 235 224 / 0.94);
+  text-wrap: balance;
+}
+
+.soglia__testo + .soglia__testo {
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  font-style: italic;
+  color: rgb(242 235 224 / 0.72);
+}
+
+/* Gli occhi che si abituano alla penombra: i contenuti emergono dal buio.
+   Nessuna attesa — la riga e' gia' li' quando arrivi, si limita a schiarirsi. */
+.emergi {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition: opacity 1.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 1.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.emergi.is-visibile { opacity: 1; transform: none; }
+.emergi[data-ritardo="1"] { transition-delay: 0.35s; }
+.emergi[data-ritardo="2"] { transition-delay: 0.7s; }
+
+/* Il filo di luce che chiude il blocco e porta alla sezione successiva */
+.soglia__filo {
+  width: 1px;
+  height: clamp(4rem, 12vh, 7rem);
+  margin: clamp(3rem, 9vh, 5rem) auto 0;
+  background: linear-gradient(to bottom, rgb(232 184 122 / 0.5), transparent);
+}
+
+/* =========================================================================
+   Fallback: mobile e prefers-reduced-motion
+   ========================================================================= */
+
+/* Senza pin l'hero e' alto una schermata e basta: nessuno scroll rubato. */
+.hero[data-modalita="statico"],
+.hero[data-modalita="riproduzione"] {
+  height: 100vh;
+  height: 100svh;
+}
+.hero[data-modalita="statico"] .hero__pin,
+.hero[data-modalita="riproduzione"] .hero__pin {
+  position: relative;
+}
+.hero[data-modalita="statico"] .hero__scorri,
+.hero[data-modalita="riproduzione"] .hero__scorri { --scorri-op: 1; }
+
+/* In riduzione di movimento resta il primo frame, fermo, e il titolo. */
+@media (prefers-reduced-motion: reduce) {
+  .hero__grana { animation: none; }
+  .hero__scorri i::after { animation: none; }
+  .emergi { transition-duration: 0.01ms; }
+}

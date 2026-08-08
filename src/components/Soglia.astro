@@ -1,0 +1,25 @@
+---
+/* Il primo blocco oltre la porta.
+   Intimo e testuale, non una griglia: si e' appena entrati in casa.
+   Il fondo parte dallo stesso buio in cui finisce l'hero e schiarisce
+   verso il crema mentre si scende. */
+---
+
+<section class="soglia" id="soglia">
+  <div class="luce" aria-hidden="true"></div>
+
+  <div class="soglia__interno">
+    <p class="soglia__testo emergi">
+      Ci sono case che non si visitano.
+    </p>
+    <p class="soglia__testo emergi" data-ritardo="1">
+      Si abitano — anche solo per una notte.
+    </p>
+    <div class="soglia__filo emergi" data-ritardo="2" aria-hidden="true"></div>
+  </div>
+</section>
+
+<script>
+  import { inizializzaEmersione } from '../scripts/hero.js';
+  inizializzaEmersione();
+</script>

@@ -1,0 +1,58 @@
+---
+interface Props {
+  /* Base da cui pendono land/, port/ e poster.jpg. In Astro public/ e' la
+     radice; l'anteprima statica senza Node passa un percorso relativo. */
+  frames?: string;
+}
+const { frames = '/hero' } = Astro.props;
+---
+
+<section class="hero" id="hero" data-frames={frames}>
+  <div class="hero__pin">
+    <picture>
+      {/* Sotto 21/20 vale il taglio verticale: il poster orizzontale li'
+          mostrerebbe il 20% della larghezza. Stessa soglia del JS. */}
+      <source media="(max-aspect-ratio: 21/20)" srcset={`${frames}/port/f_000.jpg`} />
+      <img
+        class="hero__poster"
+        src={`${frames}/poster.jpg`}
+        alt=""
+        aria-hidden="true"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
+    <canvas class="hero__canvas" aria-hidden="true"></canvas>
+
+    <div class="hero__vignetta" aria-hidden="true"></div>
+    <div class="hero__grana" aria-hidden="true"></div>
+
+    <div class="hero__testo">
+      <h1 class="hero__titolo">I Costanti</h1>
+      <p class="hero__sottotitolo">
+        <span>Agriturismo e Bed &amp; Breakfast</span
+        ><span class="hero__trattino" aria-hidden="true"> — </span
+        ><span>Caldiero, Verona</span>
+      </p>
+    </div>
+
+    <p class="hero__frase" aria-hidden="true">Dove il tempo rallenta</p>
+
+    <div class="hero__scorri">
+      <span>Scorri</span>
+      <i aria-hidden="true"></i>
+    </div>
+
+    <!-- La soglia che si allarga: il buio del varco diventa la pagina,
+         col bagliore del corridoio gia' acceso dentro. -->
+    <div class="hero__apertura" aria-hidden="true">
+      <div class="luce"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { inizializzaHero } from '../scripts/hero.js';
+  const hero = document.querySelector<HTMLElement>('.hero');
+  if (hero) inizializzaHero(hero);
+</script>
